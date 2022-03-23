@@ -5,6 +5,6 @@ if [ "$1" = "" ]; then
 	exit 0
 fi
 
-go build ../.
+go build .
 
 docker build -t "tkpd/gripmock:$1" .

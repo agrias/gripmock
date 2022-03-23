@@ -3,6 +3,7 @@ module github.com/tokopedia/gripmock
 go 1.15
 
 require (
+	//github.com/brianvoe/gofakeit/v6 v6.15.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/go-chi/chi v4.1.2+incompatible
 	github.com/golang/protobuf v1.5.2
@@ -19,3 +20,6 @@ require (
 	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776 // indirect
 )
+
+// replace github.com/brianvoe/gofakeit/v6 => /go/src/github.com/tokopedia/gripmock/gofakeit
+

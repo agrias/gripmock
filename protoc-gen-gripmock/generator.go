@@ -34,6 +34,7 @@ func main() {
 	// Initialise our plugin with default options
 	opts := protogen.Options{}
 	plugin, err := opts.New(&request)
+	plugin.SupportedFeatures = uint64(pluginpb.CodeGeneratorResponse_FEATURE_PROTO3_OPTIONAL)
 	if err != nil {
 		log.Fatalf("error initializing plugin: %v", err)
 	}
@@ -41,6 +42,8 @@ func main() {
 	protos := make([]*descriptor.FileDescriptorProto, len(plugin.Files))
 	for index, file := range plugin.Files {
 		protos[index] = file.Proto
+		log.Printf("@@@@@ %s", file.GeneratedFilenamePrefix)
+		// protos[index].GoPackageName = 
 	}
 
 	params := make(map[string]string)
@@ -171,12 +174,19 @@ func generateServer(protos []*descriptor.FileDescriptorProto, opt *Options) erro
 	return err
 }
 
+func getRelativeProtoName(name string) string {
+	return ""
+} 
+
 func resolveDependencies(protos []*descriptor.FileDescriptorProto) map[string]string {
 
 	deps := map[string]string{}
 	for _, proto := range protos {
+		log.Printf("####1: %s", proto.GetName())
 		alias, pkg := getGoPackage(proto)
 
+		log.Printf("####2: %s", alias)
+		log.Printf("####3: %s", pkg)
 		// fatal if go_package is not present
 		if pkg == "" {
 			log.Fatalf("option go_package is required. but %s doesn't have any", proto.GetName())
@@ -185,6 +195,7 @@ func resolveDependencies(protos []*descriptor.FileDescriptorProto) map[string]st
 		if _, ok := deps[pkg]; ok {
 			continue
 		}
+
 
 		deps[pkg] = alias
 	}

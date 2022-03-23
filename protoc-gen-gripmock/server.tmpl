@@ -16,6 +16,9 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/protobuf/runtime/protoiface"
+	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/reflect/protoreflect"
+	// "github.com/brianvoe/gofakeit/v6"
 )
 {{ range $package, $alias := .Dependencies }}
 import {{$alias}} "{{$package}}"
@@ -28,6 +31,30 @@ const (
 {{ range .Services }}
 {{ template "services" . }}
 {{ end }}
+
+func randomInt32() int32 {
+	return int32(10000)
+}
+
+func randomInt64() int64 {
+	return int64(10000)
+}
+
+// Copied from github.com/golang/protobuf/blob/master/jsonpb/json.go#L51
+func wellKnownType(s protoreflect.FullName) string {
+	if s.Parent() == "google.protobuf" {
+		switch s.Name() {
+		case "Empty", "Any",
+			"BoolValue", "BytesValue", "StringValue",
+			"Int32Value", "UInt32Value", "FloatValue",
+			"Int64Value", "UInt64Value", "DoubleValue",
+			"Duration", "Timestamp",
+			"NullValue", "Struct", "Value", "ListValue":
+			return string(s.Name())
+		}
+	}
+	return ""
+}
 
 func main() {
 	lis, err := net.Listen("tcp", TCP_ADDRESS)
@@ -72,8 +99,12 @@ type {{.Name}} struct{}
 {{ define "standard_method" }}
 func (s *{{.ServiceName}}) {{.Name}}(ctx context.Context, in *{{.Input}}) (*{{.Output}},error){
 	out := &{{.Output}}{}
+	// var out {{.Output}}
+	// gofakeit.Struct(&out)
+	// log.Println(out)
 	err := findStub("{{.ServiceName}}", "{{.Name}}", in, out)
 	return out, err
+	// return &out, nil
 }
 {{ end }}
 
@@ -177,8 +208,27 @@ func findStub(service, method string, in, out protoiface.MessageV1) error {
 	if respRPC.Error != "" {
 		return fmt.Errorf(respRPC.Error)
 	}
+	
+	var data []byte
 
-	data, _ := json.Marshal(respRPC.Data)
-	return jsonpb.Unmarshal(bytes.NewReader(data), out)
+	mr := proto.MessageReflect(out)
+        md := mr.Descriptor()
+
+        switch wellKnownType(md.FullName()) {
+        case "BoolValue",
+              "Int32Value", "UInt32Value", "FloatValue",
+              "Int64Value", "UInt64Value", "DoubleValue":
+		typed_data := respRPC.Data.(map[string]interface{})
+		data, err = json.Marshal(typed_data["value"])
+	default:
+		data, err = json.Marshal(respRPC.Data)
+        }
+
+        if err != nil {               
+                return err            
+        }              
+ 
+                
+        return jsonpb.Unmarshal(bytes.NewReader(data), out)
 }
 {{ end }}

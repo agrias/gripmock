@@ -1,10 +1,14 @@
-FROM golang:alpine
+FROM docker.io/library/golang:alpine@sha256:b35984144ec2c2dfd6200e112a9b8ecec4a8fd9eff0babaff330f1f82f14cb2a 
 
 RUN mkdir /proto
 
 RUN mkdir /stubs
 
 RUN apk -U --no-cache add git protobuf
+
+RUN apk add bash
+
+ENV PATH="/go/src/github.com/tokopedia/gripmock:${PATH}"
 
 RUN go get -u -v github.com/golang/protobuf/protoc-gen-go \
 	google.golang.org/grpc \
@@ -29,6 +33,8 @@ RUN rm -rf /protobuf-repo
 RUN mkdir -p /go/src/github.com/tokopedia/gripmock
 
 COPY . /go/src/github.com/tokopedia/gripmock
+
+RUN chmod u+x /go/src/github.com/tokopedia/gripmock/fix_gopackage.sh
 
 WORKDIR /go/src/github.com/tokopedia/gripmock/protoc-gen-gripmock
 
